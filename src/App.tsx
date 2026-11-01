@@ -361,9 +361,21 @@ const AgentWorkspace = () => {
 
 const SimpleTablePage = ({ title, description, icon: Icon, apiPath }: { title: string, description: string, icon: any, apiPath: string }) => {
   const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(apiPath).then(res => res.json()).then(setData);
+    setLoading(true);
+    fetch(apiPath)
+      .then(res => res.json())
+      .then(res => {
+        // Handle both direct arrays and paginated objects { data, total, ... }
+        if (Array.isArray(res)) {
+          setData(res);
+        } else if (res && Array.isArray(res.data)) {
+          setData(res.data);
+        }
+      })
+      .finally(() => setLoading(false));
   }, [apiPath]);
 
   return (
@@ -388,26 +400,40 @@ const SimpleTablePage = ({ title, description, icon: Icon, apiPath }: { title: s
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                {data.length > 0 && Object.keys(data[0]).filter(k => k !== 'id').map(key => (
-                  <th key={key} className="px-6 py-3 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.map((item, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors text-sm">
-                  {Object.entries(item).filter(([k]) => k !== 'id').map(([key, value]: [any, any]) => (
-                    <td key={key} className="px-6 py-4">
-                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                    </td>
+          {loading ? (
+            <div className="p-12 text-center text-slate-400">Loading records...</div>
+          ) : data.length === 0 ? (
+            <div className="p-12 text-center text-slate-400">No records found.</div>
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                  {Object.keys(data[0]).filter(k => k !== 'id' && k !== 'tenantId').map(key => (
+                    <th key={key} className="px-6 py-3 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.map((item, i) => (
+                  <tr key={i} className="hover:bg-slate-50 transition-colors text-sm">
+                    {Object.entries(item).filter(([k]) => k !== 'id' && k !== 'tenantId').map(([key, value]: [any, any]) => (
+                      <td key={key} className="px-6 py-4">
+                        {typeof value === 'object' ? (
+                          <span className="text-xs text-slate-500">
+                            {value?.name || JSON.stringify(value).slice(0, 50)}
+                          </span>
+                        ) : (
+                          <span className="truncate max-w-[200px] block">
+                            {String(value)}
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

@@ -9,36 +9,49 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Mock Database
-const MOCK_DATA = {
-  users: [
-    { id: 'u1', name: 'Elena Vance', email: 'elena@sentinel.ai', role: 'SUPER_ADMIN', department: 'Executive', status: 'ACTIVE' },
-    { id: 'u2', name: 'Marcus Chen', email: 'marcus@sentinel.ai', role: 'SECURITY_ADMIN', department: 'Security', status: 'ACTIVE' },
-    { id: 'u3', name: 'Sarah Miller', email: 'sarah@sentinel.ai', role: 'EMPLOYEE', department: 'Engineering', status: 'ACTIVE' },
-  ],
-  auditEvents: Array.from({ length: 50 }, (_, i) => ({
-    id: `a${i}`,
-    timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-    actor: { name: ['Elena Vance', 'Marcus Chen', 'Sarah Miller'][i % 3], role: ['SUPER_ADMIN', 'SECURITY_ADMIN', 'EMPLOYEE'][i % 3] },
-    actionType: ['AGENT_CHAT', 'TOOL_EXECUTION', 'ACCESS_DENIED'][i % 3],
-    resource: 'Project X Document',
-    status: ['SUCCESS', 'DENIED', 'PENDING_APPROVAL'][i % 3],
-    risk: ['LOW', 'MEDIUM', 'HIGH'][i % 3],
-  })),
-  tools: [
+import { mockData } from './src/lib/mockData.js';
+
+// Mock Database wrapper
+const db = {
+  getOverview: () => ({
+    metrics: {
+      totalExecutions: 8420,
+      successfulOperations: 7950,
+      failedOperations: 142,
+      deniedAuthorizations: 328,
+      pendingApprovals: mockData.approvals.filter(a => a.status === 'PENDING').length,
+      activeUsers: 142,
+    },
+    recentEvents: mockData.auditLogs.slice(0, 5),
+  }),
+  getAuditLogs: (page = 1, limit = 50) => {
+    const start = (page - 1) * limit;
+    return {
+      data: mockData.auditLogs.slice(start, start + limit),
+      total: mockData.auditLogs.length,
+      page,
+      limit
+    };
+  },
+  getApprovals: (page = 1, limit = 50) => {
+    const start = (page - 1) * limit;
+    return {
+      data: mockData.approvals.slice(start, start + limit),
+      total: mockData.approvals.length,
+      page,
+      limit
+    };
+  },
+  getTools: () => [
     { id: 't1', name: 'search_docs', displayName: 'Search Knowledge Base', description: 'Search company documents', risk: 'LOW', enabled: true },
     { id: 't2', name: 'send_email', displayName: 'Send External Email', description: 'Send emails to external partners', risk: 'HIGH', enabled: true },
     { id: 't3', name: 'update_project', displayName: 'Update Project Record', description: 'Modify project status or details', risk: 'MEDIUM', enabled: true },
-  ],
-  approvals: [
-    { id: 'ap1', requesterName: 'Sarah Miller', toolName: 'Send External Email', status: 'PENDING', createdAt: new Date().toISOString(), risk: 'HIGH' },
-    { id: 'ap2', requesterName: 'Elena Vance', toolName: 'Update Project Record', status: 'APPROVED', createdAt: new Date().toISOString(), risk: 'MEDIUM' },
   ]
 };
 
 async function createServer() {
   const app = express();
-  const port = process.env.PORT || 3000;
+  const port = 3000;
 
   app.use(express.json());
 
@@ -50,29 +63,23 @@ async function createServer() {
 
   // API Endpoints
   app.get('/api/overview', (req, res) => {
-    res.json({
-      metrics: {
-        totalExecutions: 1240,
-        successfulOperations: 1180,
-        failedOperations: 24,
-        deniedAuthorizations: 36,
-        pendingApprovals: MOCK_DATA.approvals.filter(a => a.status === 'PENDING').length,
-        activeUsers: MOCK_DATA.users.length,
-      },
-      recentEvents: MOCK_DATA.auditEvents.slice(0, 5),
-    });
+    res.json(db.getOverview());
   });
 
   app.get('/api/audit', (req, res) => {
-    res.json(MOCK_DATA.auditEvents);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    res.json(db.getAuditLogs(page, limit));
   });
 
   app.get('/api/tools', (req, res) => {
-    res.json(MOCK_DATA.tools);
+    res.json(db.getTools());
   });
 
   app.get('/api/approvals', (req, res) => {
-    res.json(MOCK_DATA.approvals);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    res.json(db.getApprovals(page, limit));
   });
 
   app.post('/api/agent/chat', async (req, res) => {
