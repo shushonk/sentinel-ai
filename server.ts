@@ -11,47 +11,24 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import { mockData } from './src/lib/mockData.js';
 
-// Add extra mock data for specific pages
-const extendedMockData = {
-  ...mockData,
-  policies: [
-    { id: 'p1', name: 'PII Data Leak Prevention', category: 'DLP', enforcement: 'ENFORCE', risk: 'CRITICAL', lastUpdated: '2023-10-15T10:00:00Z' },
-    { id: 'p2', name: 'High-Risk Tool Approval', category: 'ACCESS', enforcement: 'ENFORCE', risk: 'HIGH', lastUpdated: '2023-10-14T09:00:00Z' },
-    { id: 'p3', name: 'External Communication Logging', category: 'AUDIT', enforcement: 'MONITOR', risk: 'LOW', lastUpdated: '2023-10-12T08:00:00Z' },
-    { id: 'p4', name: 'Cross-Tenant Isolation', category: 'COMPLIANCE', enforcement: 'ENFORCE', risk: 'CRITICAL', lastUpdated: '2023-10-10T07:00:00Z' },
-  ],
-  roles: [
-    { id: 'r1', name: 'Super Admin', permissions: ['*'], userCount: 2 },
-    { id: 'r2', name: 'Security Admin', permissions: ['audit.read', 'policies.manage', 'security.investigate'], userCount: 3 },
-    { id: 'r3', name: 'Manager', permissions: ['approvals.review', 'agent.chat'], userCount: 12 },
-    { id: 'r4', name: 'Employee', permissions: ['agent.chat', 'documents.read'], userCount: 85 },
-  ],
-  users: [
-    { id: 'u1', name: 'Elena Vance', email: 'elena@sentinel.ai', role: 'Super Admin', department: 'Executive', status: 'ACTIVE' },
-    { id: 'u2', name: 'Marcus Chen', email: 'marcus@sentinel.ai', role: 'Security Admin', department: 'Security', status: 'ACTIVE' },
-    { id: 'u3', name: 'Sarah Miller', email: 'sarah@sentinel.ai', role: 'Employee', department: 'Engineering', status: 'ACTIVE' },
-    { id: 'u4', name: 'John Doe', email: 'john@sentinel.ai', role: 'Manager', department: 'Operations', status: 'ACTIVE' },
-  ]
-};
-
 // Mock Database wrapper
 const db = {
   getOverview: () => ({
     metrics: {
-      totalExecutions: 8420,
-      successfulOperations: 7950,
-      failedOperations: 142,
-      deniedAuthorizations: 328,
-      pendingApprovals: extendedMockData.approvals.filter(a => a.status === 'PENDING').length,
-      activeUsers: 142,
+      totalExecutions: 12450,
+      successfulOperations: 11820,
+      failedOperations: 242,
+      deniedAuthorizations: 388,
+      pendingApprovals: mockData.approvals.filter(a => a.status === 'PENDING').length,
+      activeUsers: mockData.users.length,
     },
-    recentEvents: extendedMockData.auditLogs.slice(0, 5),
+    recentEvents: mockData.auditLogs.slice(0, 5),
   }),
   getAuditLogs: (page = 1, limit = 50) => {
     const start = (page - 1) * limit;
     return {
-      data: extendedMockData.auditLogs.slice(start, start + limit),
-      total: extendedMockData.auditLogs.length,
+      data: mockData.auditLogs.slice(start, start + limit),
+      total: mockData.auditLogs.length,
       page,
       limit
     };
@@ -59,20 +36,22 @@ const db = {
   getApprovals: (page = 1, limit = 50) => {
     const start = (page - 1) * limit;
     return {
-      data: extendedMockData.approvals.slice(start, start + limit),
-      total: extendedMockData.approvals.length,
+      data: mockData.approvals.slice(start, start + limit),
+      total: mockData.approvals.length,
       page,
       limit
     };
   },
-  getPolicies: () => extendedMockData.policies,
-  getRoles: () => extendedMockData.roles,
-  getUsers: () => extendedMockData.users,
-  getTools: () => [
-    { id: 't1', name: 'search_docs', displayName: 'Search Knowledge Base', description: 'Search company documents', risk: 'LOW', enabled: true },
-    { id: 't2', name: 'send_email', displayName: 'Send External Email', description: 'Send emails to external partners', risk: 'HIGH', enabled: true },
-    { id: 't3', name: 'update_project', displayName: 'Update Project Record', description: 'Modify project status or details', risk: 'MEDIUM', enabled: true },
-  ]
+  getPolicies: () => mockData.policies,
+  getRoles: () => [
+    { id: 'r1', name: 'Super Admin', permissions: ['*'], userCount: 2 },
+    { id: 'r2', name: 'Security Admin', permissions: ['audit.read', 'policies.manage', 'security.investigate'], userCount: 3 },
+    { id: 'r3', name: 'Manager', permissions: ['approvals.review', 'agent.chat'], userCount: 12 },
+    { id: 'r4', name: 'Employee', permissions: ['agent.chat', 'documents.read'], userCount: 85 },
+  ],
+  getUsers: () => mockData.users,
+  getTools: () => mockData.tools,
+  getKnowledgeBase: () => mockData.knowledgeBase,
 };
 
 async function createServer() {
@@ -146,6 +125,10 @@ async function createServer() {
 
   app.get('/api/users', (req, res) => {
     res.json(db.getUsers());
+  });
+
+  app.get('/api/knowledge', (req, res) => {
+    res.json(db.getKnowledgeBase());
   });
 
   app.post('/api/agent/chat', async (req, res) => {

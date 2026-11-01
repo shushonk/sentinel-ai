@@ -871,6 +871,7 @@ export default function App() {
             >
               {activePage === 'overview' && <Dashboard />}
               {activePage === 'agent' && <AgentWorkspace />}
+              {activePage === 'knowledge' && <SimpleTablePage title="Knowledge Base" description="Authorized enterprise knowledge and documents." icon={Database} apiPath="/api/knowledge" />}
               {activePage === 'audit' && <SimpleTablePage title="Audit Logs" description="Historical record of all system activity and access." icon={FileText} apiPath="/api/audit" />}
               {activePage === 'tools' && <SimpleTablePage title="Tools & Integrations" description="Manage authorized external capabilities for AI agents." icon={Wrench} apiPath="/api/tools" />}
               {activePage === 'approvals' && <SimpleTablePage title="Approval Center" description="Review and manage sensitive tool execution requests." icon={ClipboardList} apiPath="/api/approvals" rowActions={true} />}
@@ -880,7 +881,7 @@ export default function App() {
               {activePage === 'settings' && <SettingsPage />}
               
               {/* Fallback for other pages in prototype */}
-              {!['overview', 'agent', 'audit', 'tools', 'approvals', 'access', 'policies', 'users', 'settings'].includes(activePage) && (
+              {!['overview', 'agent', 'knowledge', 'audit', 'tools', 'approvals', 'access', 'policies', 'users', 'settings'].includes(activePage) && (
                 <div className="p-16 flex flex-col items-center justify-center text-center">
                   <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-300 mb-6">
                     <Settings className="w-10 h-10" />

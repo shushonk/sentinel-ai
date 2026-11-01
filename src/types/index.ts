@@ -19,7 +19,7 @@ export type Permission =
 
 export type DataClassification = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
 
-export type Department = 'Engineering' | 'Finance' | 'Legal' | 'Security' | 'Operations' | 'All';
+export type Department = 'Engineering' | 'Finance' | 'Legal' | 'Security' | 'Operations' | 'Executive' | 'Human Resources' | 'Marketing' | 'All';
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
